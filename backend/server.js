@@ -1,11 +1,13 @@
 const express = require("express");
 const fs = require("fs");
 const path = require("path");
+const cors = require("cors");
 
 const app = express();
 const PORT = 5000;
 
 app.use(express.json());
+app.use(cors());
 
 app.post("/save-json", (req, res) => {
 	const data = req.body;

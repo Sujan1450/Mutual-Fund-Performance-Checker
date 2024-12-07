@@ -145,14 +145,6 @@ const FileUpload = () => {
 					</li>
 				))}
 			</section>
-			<div>
-				{data && (
-					<div>
-						<h2>Imported Data:</h2>
-						<pre>{JSON.stringify(data, null, 2)}</pre>
-					</div>
-				)}
-			</div>
 		</div>
 	);
 };
