@@ -26,7 +26,7 @@ const FileUpload = () => {
 		}
 	};
 	const handleSave = (jsonData) => {
-		fetch("http://localhost:3000/save-json", {
+		fetch("http://localhost:5000/save-json", {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json",
