@@ -1,14 +1,15 @@
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import { IconContext } from "react-icons";
 import { FaFileAlt } from "react-icons/fa";
 import { IoIosCloudUpload } from "react-icons/io";
 import * as XLSX from "xlsx";
+import { MyContext } from "../../context/context";
 import "./FileUpload.css";
 
 const FileUpload = () => {
 	const [progressFiles, setProgressFiles] = useState([]);
 	const [uploadedFiles, setUploadedFiles] = useState([]);
-	const [data, setData] = useState(null);
+	const { data, setData } = useContext(MyContext);
 
 	const handleClick = () => {
 		document.querySelector(".file-input").click();
@@ -36,9 +37,13 @@ const FileUpload = () => {
 			.then((response) => {
 				if (response.ok) {
 					console.log("JSON file saved successfully!");
+					return response.json();
 				} else {
 					console.error("Failed to save JSON file.");
 				}
+			})
+			.then((savedData) => {
+				setData(savedData);
 			})
 			.catch((error) => console.error("Error:", error));
 	};
@@ -53,8 +58,6 @@ const FileUpload = () => {
 					const sheetName = workbook.SheetNames[0];
 					const sheet = workbook.Sheets[sheetName];
 					const sheetData = XLSX.utils.sheet_to_json(sheet);
-
-					setData(sheetData);
 					handleSave(sheetData);
 				};
 				reader.readAsBinaryString(file);
@@ -71,7 +74,7 @@ const FileUpload = () => {
 
 			if (fileLoaded === 100) {
 				setProgressFiles([]);
-				setUploadedFiles((prev) => [{ name, size: fileSize }, ...prev]);
+				setUploadedFiles([{ name, size: fileSize }]);
 			}
 		});
 

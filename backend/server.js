@@ -10,8 +10,23 @@ app.use(express.json());
 app.use(cors());
 
 app.post("/save-json", (req, res) => {
-	const data = req.body;
-
+	let data = req.body;
+	const index = data.findIndex((item) => item["__EMPTY"] === "Fund Name");
+	if (index !== -1) {
+		const targetObject = data[index];
+		const valuesArray = Object.values(targetObject);
+		data = data.slice(index + 1);
+		const updatedData = data.map((item) => {
+			const newItem = {};
+			valuesArray.forEach((key, i) => {
+				if (item[Object.keys(item)[i]] !== undefined) {
+					newItem[key] = item[Object.keys(item)[i]];
+				}
+			});
+			return newItem;
+		});
+		data = updatedData;
+	}
 	fs.writeFile(
 		path.join(__dirname, "data.json"),
 		JSON.stringify(data, null, 2),
@@ -20,11 +35,11 @@ app.post("/save-json", (req, res) => {
 				console.error("Error writing JSON file:", err);
 				return res.status(500).send("Error saving file");
 			}
-			res.send("File saved successfully");
+			res.json(data);
 		}
 	);
 });
 
-app.listen(PORT, () => {
+https: app.listen(PORT, () => {
 	console.log(`Server is running on http://localhost:${PORT}`);
 });
