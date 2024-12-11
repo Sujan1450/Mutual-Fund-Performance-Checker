@@ -9,6 +9,16 @@ const PORT = 5000;
 app.use(express.json());
 app.use(cors());
 
+app.get("/fetch-json", (req, res) => {
+	try {
+		let data = fs.readFileSync("./backend/data.json", "utf8");
+		data = JSON.parse(data);
+		res.json(data);
+	} catch (err) {
+		console.error("Error reading the file:", err);
+		res.json([]);
+	}
+});
 app.post("/save-json", (req, res) => {
 	let data = req.body;
 	const index = data.findIndex((item) => item["__EMPTY"] === "Fund Name");

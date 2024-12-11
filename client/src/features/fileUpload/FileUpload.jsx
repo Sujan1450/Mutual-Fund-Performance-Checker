@@ -83,13 +83,10 @@ const FileUpload = () => {
 		xhr.send(formData);
 	};
 	return (
-		<div className="wrapper">
+		<div className="wrapper" onClick={handleClick}>
 			<header>Upload Transaction File</header>
 			<form action="#">
-				<div
-					className="flex flex-col items-center justify-center"
-					onClick={handleClick}
-				>
+				<div className="flex flex-col items-center justify-center">
 					<input
 						className="file-input"
 						type="file"
