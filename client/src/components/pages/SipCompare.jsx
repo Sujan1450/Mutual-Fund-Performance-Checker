@@ -88,29 +88,50 @@ const SipCompare = () => {
 			let navValues = [];
 			let unitsA = 0;
 			let unitsB = 0;
-			let isMonthStart = true;
+			let newMonth = true;
+			let sipDate = selectedSipDate ? selectedSipDate : 4;
+			let monthYear;
+			let monthAddedArray = [];
 			let tempSipAmount = sipAmount ? sipAmount : 500;
 			for (let i = fundAData.length - 1; i > -1; i--) {
 				let formattedDate = dayjs(fundAData[i].date, "DD-MM-YYYY").format(
 					"YYYY-MM-DD"
 				);
+				monthYear =
+					dayjs(formattedDate).month().toString() +
+					"," +
+					dayjs(formattedDate).year().toString();
 				if (!fundBData[i]) {
 					continue;
 				}
 				let navA = fundAData[i].nav;
 				let navB = fundBData[i].nav;
-				if (isMonthStart || navValues.length === 0) {
+				if (
+					(newMonth && !monthAddedArray.includes[monthYear]) ||
+					navValues.length === 0
+				) {
 					unitsA += tempSipAmount / navA;
 					unitsB += tempSipAmount / navB;
+					monthAddedArray.push(monthYear);
 				}
 				navValues.push({
 					date: formattedDate,
 					[selectedFundA]: unitsA * navA,
 					[selectedFundB]: unitsB * navB,
 				});
-				isMonthStart =
-					dayjs(formattedDate).date() ===
-					(selectedSipDate ? selectedSipDate : 4);
+				if (
+					!monthAddedArray.includes(monthYear) &&
+					sipDate < dayjs(formattedDate).date()
+				) {
+					newMonth = true;
+				} else if (
+					dayjs(formattedDate).date() === sipDate &&
+					!monthAddedArray.includes(monthYear)
+				) {
+					newMonth = true;
+				} else {
+					newMonth = false;
+				}
 			}
 
 			setChartData(navValues);
@@ -221,7 +242,7 @@ const SipCompare = () => {
 										setSelectedStartDate(newValue.format("YYYY-MM-DD"));
 									}
 								}}
-								minDate={dayjs().subtract(4, "years")}
+								minDate={dayjs().subtract(7, "years")}
 								maxDate={selectedEndDate ? dayjs(selectedEndDate) : dayjs()}
 								defaultCalendarMonth={dayjs().month()}
 								defaultCalendarYear={dayjs().year()}
