@@ -29,9 +29,17 @@ const RenderLineChart = (props) => {
 						bottom: 5,
 					}}
 				>
-					<XAxis dataKey="date" />
-					<YAxis />
-					<Tooltip />
+					<XAxis dataKey="date" tick={false} />
+					<YAxis
+						formatter={(value) => {
+							return `₹${value.toFixed(2)}`;
+						}}
+					/>
+					<Tooltip
+						formatter={(value) => {
+							return `₹${value.toFixed(2)}`;
+						}}
+					/>
 					<Legend />
 					<Line
 						type="monotone"

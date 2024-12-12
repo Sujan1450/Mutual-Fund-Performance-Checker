@@ -6,7 +6,7 @@
 }
 .wrapper {
 	width: 430px;
-	background: #fff;
+	background: #282828;
 	border-radius: 5px;
 	padding: 30px;
 	box-shadow: 7px 7px 12px rgba(0, 0, 0, 0.05);
@@ -70,7 +70,7 @@ section .details span {
 	height: 6px;
 	width: 100%;
 	margin-bottom: 4px;
-	background: #fff;
+	background: #282828;
 	border-radius: 30px;
 }
 .content .progress-bar .progress {
