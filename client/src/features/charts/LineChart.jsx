@@ -30,11 +30,7 @@ const RenderLineChart = (props) => {
 					}}
 				>
 					<XAxis dataKey="date" tick={false} />
-					<YAxis
-						formatter={(value) => {
-							return `₹${value.toFixed(2)}`;
-						}}
-					/>
+					<YAxis tickFormatter={(value) => `₹${value.toFixed(2)}`} />
 					<Tooltip
 						formatter={(value) => {
 							return `₹${value.toFixed(2)}`;

@@ -8,6 +8,7 @@ import TextField from "@mui/material/TextField";
 import * as dayjs from "dayjs";
 import React, { useContext, useEffect, useState } from "react";
 import { MyContext } from "../../context/context";
+import RenderAreaChart from "../../features/charts/AreaChart";
 import RenderLineChart from "../../features/charts/LineChart";
 import FileUpload from "../../features/fileUpload/FileUpload";
 var customParseFormat = require("dayjs/plugin/customParseFormat");
@@ -16,6 +17,7 @@ dayjs.extend(customParseFormat);
 const CustomCompare = () => {
 	const { data, setData } = useContext(MyContext);
 	const [groupedData, setGroupedData] = useState([]);
+	const [selectedDateWiseData, setSelectedDateWiseData] = useState([]);
 	const [totalFundsArray, setTotalFundsArray] = useState([]);
 	const [selectedFundDate, setSelectedFundDate] = useState([]);
 	const [uploadedFundNames, setUploadedFundNames] = useState([]);
@@ -26,6 +28,7 @@ const CustomCompare = () => {
 	const [exactFundCode, setExactFundCode] = useState();
 	const [exactFundOptions, setExactFundOptions] = useState([]);
 	const [chartData, setChartData] = useState([]);
+	const [comparisonText, setComparisonText] = useState("");
 
 	useEffect(() => {
 		fetchData();
@@ -56,17 +59,24 @@ const CustomCompare = () => {
 	useEffect(() => {
 		if (selectedFundNameA) {
 			let tempData = groupedData[selectedFundNameA];
-			let tempDates = [];
-			tempData.forEach((element) => {
-				if (
-					element &&
-					element["Transaction Type"] &&
-					element["Transaction Type"] === "Purchase"
-				) {
-					tempDates.push(dayjs(element["Date"]).format("YYYY-MM-DD"));
+			let tempDates = {};
+			let totalUnits = 0;
+			for (let i = tempData.length - 1; i >= 0; i--) {
+				const element = tempData[i];
+				if (element["Transaction Type"] === "Purchase") {
+					totalUnits += element["Units Traded"];
+				} else {
+					totalUnits -= element["Units Traded"];
 				}
-			});
-			setSelectedFundDate(tempDates);
+				tempDates[dayjs(element["Date"]).format("YYYY-MM-DD")] = {
+					units: totalUnits,
+					nav: element["NAV"],
+					amount: element["Amount"],
+				};
+			}
+			setSelectedDateWiseData(tempDates);
+			let datesArray = Object.keys(tempDates);
+			setSelectedFundDate(datesArray);
 			getExactOptions();
 		}
 	}, [selectedFundNameA]);
@@ -94,7 +104,7 @@ const CustomCompare = () => {
 	}, [exactFundCode, selectedCompareFundCode]);
 	async function getNavValues() {
 		try {
-			let startDate = selectedFundDate[selectedFundDate.length - 1];
+			let startDate = selectedFundDate[0];
 			let endDate = dayjs().format("YYYY-MM-DD");
 			let urlA = `https://api.mfapi.in/mf/${exactFundCode}?startDate=${startDate}&endDate=${endDate}`;
 			let urlB = `https://api.mfapi.in/mf/${selectedCompareFundCode}?startDate=${startDate}&endDate=${endDate}`;
@@ -129,8 +139,9 @@ const CustomCompare = () => {
 			let navA = fundAData[i].nav;
 			let navB = fundBData[i] ? fundBData[i].nav : navA;
 			if (selectedFundDate.includes(formattedDate)) {
-				unitsA += 500 / navA;
-				unitsB += 500 / navB;
+				let amountTraded = selectedDateWiseData[formattedDate].amount;
+				unitsA += amountTraded / navA;
+				unitsB += amountTraded / navB;
 				navValues.push({
 					date: fundAData[i].date,
 					[selectedExactFund]: unitsA * navA,
@@ -144,8 +155,22 @@ const CustomCompare = () => {
 				});
 			}
 		}
-
 		setChartData(navValues);
+		const funds = Object.entries(navValues[navValues.length - 1]).filter(
+			([key]) => key !== "date"
+		);
+		funds.sort((a, b) => b[1] - a[1]);
+		const [highestFund, secondHighestFund] = funds;
+		const percentageGain =
+			((highestFund[1] - secondHighestFund[1]) / secondHighestFund[1]) * 100;
+		let text =
+			highestFund[0] +
+			" beats " +
+			secondHighestFund[0] +
+			" by " +
+			percentageGain.toFixed(2) +
+			"%";
+		setComparisonText(text);
 	}
 
 	const handleDataChange = (data) => {
@@ -157,6 +182,22 @@ const CustomCompare = () => {
 			acc[fundName].push(item);
 			return acc;
 		}, {});
+		let totalUnitsByFund = {};
+		for (const fundName in temGroupedData) {
+			const transactions = temGroupedData[fundName];
+			const totalUnits = transactions.reduce((sum, transaction) => {
+				if (transaction["Transaction Type"] === "Purchase") {
+					return sum + transaction["Units Traded"];
+				} else {
+					return sum - transaction["Units Traded"];
+				}
+			}, 0);
+			if (totalUnits > 0) {
+				totalUnitsByFund[fundName] = totalUnits;
+			} else {
+				delete temGroupedData[fundName];
+			}
+		}
 		let tempFundNames = Object.keys(temGroupedData);
 		setUploadedFundNames(tempFundNames);
 		setGroupedData(temGroupedData);
@@ -186,7 +227,9 @@ const CustomCompare = () => {
 				<div className="flex ">
 					<div className="mr-5">
 						<FormControl sx={{ m: 1, width: 550 }}>
-							<InputLabel id="demo-multiple-name-label">Fund Name</InputLabel>
+							<InputLabel id="demo-multiple-name-label">
+								Portfolio Fund Name
+							</InputLabel>
 							<Select
 								labelId="demo-multiple-name-label"
 								id="demo-multiple-name"
@@ -194,7 +237,7 @@ const CustomCompare = () => {
 									handleFundNameChange(event.target.value, "FundA")
 								}
 								value={selectedFundNameA}
-								input={<OutlinedInput label="Fund Name" />}
+								input={<OutlinedInput label="Portfolio Fund Name" />}
 							>
 								<MenuItem disabled value="Select an option">
 									<em>Select an option</em>
@@ -209,9 +252,7 @@ const CustomCompare = () => {
 					</div>
 					<div className="mr-5">
 						<FormControl sx={{ m: 1, width: 550 }}>
-							<InputLabel id="demo-multiple-name-label">
-								Exact Fund Name
-							</InputLabel>
+							<InputLabel id="demo-multiple-name-label">Fund A</InputLabel>
 							<Select
 								labelId="demo-multiple-name-label"
 								id="demo-multiple-name"
@@ -227,7 +268,7 @@ const CustomCompare = () => {
 									);
 								}}
 								value={selectedExactFund}
-								input={<OutlinedInput label="Exact Fund Name" />}
+								input={<OutlinedInput label="Fund A" />}
 							>
 								<MenuItem disabled value="Select an option">
 									<em>Select an option</em>
@@ -275,10 +316,14 @@ const CustomCompare = () => {
 				</div>
 			)}
 			{chartData && chartData.length > 0 && (
-				<div id="chartDiv" style={{ width: "99vw", height: "350px" }}>
+				<div id="chartDiv" className="w-[99vw] h-[550px] mt-10 pt -5">
 					<RenderLineChart chartData={chartData}></RenderLineChart>
 				</div>
+				// <div id="chartDiv" className="w-[99vw] h-[550px] mt-10 pt -5">
+				// 	<RenderAreaChart chartData={chartData}></RenderAreaChart>
+				// </div>
 			)}
+			{comparisonText && <div>{comparisonText}</div>}
 		</div>
 	);
 };

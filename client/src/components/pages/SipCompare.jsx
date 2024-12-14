@@ -7,6 +7,7 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import * as dayjs from "dayjs";
 import React, { useContext, useEffect, useState } from "react";
 import { MyContext } from "../../context/context";
+import RenderAreaChart from "../../features/charts/AreaChart";
 import RenderLineChart from "../../features/charts/LineChart";
 var customParseFormat = require("dayjs/plugin/customParseFormat");
 dayjs.extend(customParseFormat);
@@ -27,6 +28,7 @@ const SipCompare = () => {
 	const [chartData, setChartData] = useState([]);
 	const [fundANav, setFundANav] = useState([]);
 	const [fundBNav, setFundBNav] = useState([]);
+	const [comparisonText, setComparisonText] = useState("");
 
 	useEffect(() => {
 		if (selectedFundA && selectedFundB) {
@@ -133,8 +135,22 @@ const SipCompare = () => {
 					newMonth = false;
 				}
 			}
-
 			setChartData(navValues);
+			const funds = Object.entries(navValues[navValues.length - 1]).filter(
+				([key]) => key !== "date"
+			);
+			funds.sort((a, b) => b[1] - a[1]);
+			const [highestFund, secondHighestFund] = funds;
+			const percentageGain =
+				((highestFund[1] - secondHighestFund[1]) / secondHighestFund[1]) * 100;
+			let text =
+				highestFund[0] +
+				" beats " +
+				secondHighestFund[0] +
+				" by " +
+				percentageGain.toFixed(2) +
+				"%";
+			setComparisonText(text);
 		}
 	}
 	const searchFund = async (value, type) => {
@@ -271,10 +287,14 @@ const SipCompare = () => {
 			</div>
 
 			{chartData && chartData.length > 0 && (
+				// <div id="chartDiv" className="w-[99vw] h-[550px] mt-10 pt -5">
+				// 	<RenderLineChart chartData={chartData}></RenderLineChart>
+				// </div>
 				<div id="chartDiv" className="w-[99vw] h-[550px] mt-10 pt -5">
-					<RenderLineChart chartData={chartData}></RenderLineChart>
+					<RenderAreaChart chartData={chartData}></RenderAreaChart>
 				</div>
 			)}
+			{comparisonText && <div>{comparisonText}</div>}
 		</div>
 	);
 };
